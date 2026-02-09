@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Pengawas ANBK - Tanah Bumbu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #059669;
+            --accent: #d97706;
+            --danger: #dc2626;
+            --bg: #f3f4f6;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); padding: 15px; margin: 0; }
+        .container { max-width: 99%; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
+        /* HEADER */
+        .header-official {
+            display: flex; align-items: center; justify-content: flex-start; gap: 25px;
+            margin-bottom: 20px; border-bottom: 4px solid var(--primary); padding-bottom: 20px;
+        }
+        .logo-box { width: 100px; height: 110px; display: flex; align-items: center; justify-content: center; }
+        #img-logo { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1)); }
+        .text-box { display: flex; flex-direction: column; justify-content: center; }
+        .instansi-name { font-size: 1.8rem; font-weight: 800; color: #111827; margin: 0; text-transform: uppercase; }
+        .dinas-name { font-size: 1.4rem; font-weight: 600; color: var(--primary); margin: 5px 0 0; }
+
+        /* TOMBOL UTAMA */
+        .top-action { margin-bottom: 15px; }
+        .btn-calc-full { 
+            background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; text-transform: uppercase;
+            transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h2 { color: var(--primary); text-align: center; margin: 10px 0 20px; font-weight: 700; text-transform: uppercase; font-size: 1.1rem; }
+
+        /* PANEL REKAPITULASI */
+        .summary-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; text-align: center; border-top: 5px solid var(--primary); }
+        .stat-card.red { border-top-color: var(--danger); }
+        .stat-card.green { border-top-color: var(--secondary); }
+        .stat-num { font-size: 32px; font-weight: 800; color: #1e293b; display: block; }
+        .stat-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+        /* ACTION BAR */
+        .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; background: #f1f5f9; padding: 15px; border-radius: 8px; align-items: center; }
+        .btn { border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .btn-add { background: var(--secondary); color: white; }
+        .btn-upload { background: #64748b; color: white; }
+        .btn-download { background: var(--accent); color: white; }
+        .btn-clear { background: var(--danger); color: white; margin-left: auto; }
+
+        /* TABEL */
+        .table-wrap { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; min-width: 900px; }
+        th { background: #f8fafc; color: #475569; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e1; text-transform: uppercase; font-size: 11px; }
+        td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; }
+        
+        .badge { padding: 6px; border-radius: 4px; font-weight: 800; display: block; text-align: center; border: 1px solid; }
+        .badge-slot { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+        .badge-person { background: #fff1f2; color: var(--danger); border-color: #fecdd3; }
+
+        .empty-row-msg { text-align: center; padding: 20px; color: #94a3b8; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-official">
+        <div class="logo-box">
+            <img id="img-logo" src="image/logo_tanbu.png" alt="Logo">
+        </div>
+        <div class="text-box">
+            <h1 class="instansi-name">DINAS PENDIDIKAN KABUPATEN TANAH BUMBU</h1>
+            <h2 class="dinas-name"></h2>
+        </div>
+    </div>
+
+    <div class="top-action">
+        <button class="btn-calc-full" onclick="calculate()">TIM PELAKSANA TEKNIS TKA JENJANG SD</button>
+    </div>
+
+    <h2>Kalkulator Kebutuhan Pengawas Untuk Tes Kemampuan Akademik (TKA) 2026</h2>
+
+    <div class="summary-panel">
+        <div class="stat-card">
+            <span class="stat-num" id="resSlot">0</span>
+            <span class="stat-label">Total Slot Tugas</span>
+        </div>
+        <div class="stat-card red">
+            <span class="stat-num" id="resOrang" style="color: var(--danger);">0</span>
+            <span class="stat-label">Total Guru Pengawas</span>
+        </div>
+        <div class="stat-card green">
+            <span class="stat-num" id="resSekolah">0</span>
+            <span class="stat-label">Sekolah Terdaftar</span>
+        </div>
+    </div>
+    <h2>Data yang tertera disini hanya bersifat referensi dan bisa dirubah sesuai kebutuhan dilapangan</h2>
+   
+
+    <div class="action-bar">
+        <button class="btn btn-add" onclick="addRow()">➕ Tambah Baris</button>
+        <label class="btn btn-upload">
+            📂 Import Daftar Sekolah (Excel)
+            <input type="file" id="importExcel" accept=".xlsx, .xls, .csv" style="display:none" onchange="importData(event)">
+        </label>
+        <button class="btn btn-download" onclick="downloadXLS()">📥 Unduh Hasil (.xlsx)</button>
+        <button class="btn btn-clear" onclick="clearTable()">🗑️ Kosongkan Tabel</button>
+    </div>
+
+    <div class="table-wrap">
+        <table id="mainTable">
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Nama Satuan Pendidikan</th>
+                    <th style="width: 15%;">Gelombang</th>
+                    <th style="width: 15%;">Sesi / Hari</th>
+                    <th style="width: 10%;">Jml Ruang</th>
+                    <th style="text-align: center;">Hasil Slot</th>
+                    <th style="text-align: center;">Hasil Pengawas</th>
+                    <th style="width: 50px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Ganti dengan URL yang Anda salin dari Google Apps Script tadi
+const scriptURL = 'https://script.google.com/macros/s/AKfycbwMVsfPVkxc24DYgujzuYxdyQ_GmsPKHYrBcjMH_yiD3ygbjGMuHxXt-YwlZbytK779/exec';
+
+function kirimKeDinas() {
+    const rows = document.querySelectorAll("#tableBody tr");
+    if(rows.length === 0) return alert("Belum ada data untuk dikirim!");
+
+    const btnKirim = document.getElementById("btnKirimData");
+    btnKirim.innerText = "Sedang Mengirim...";
+    btnKirim.disabled = true;
+
+    const allData = [];
+    rows.forEach(r => {
+        allData.push({
+            namaSekolah: r.querySelector('input[type="text"]').value,
+            gelombang: r.querySelector(".sel-gel").options[r.querySelector(".sel-gel").selectedIndex].text,
+            sesi: r.querySelector(".sel-sesi").value,
+            ruang: r.querySelector(".inp-ruang").value,
+            totalSlot: r.querySelector(".out-slot").innerText,
+            jmlPengawas: r.querySelector(".out-orang").innerText
+        });
+    });
+
+    fetch(scriptURL, { 
+        method: 'POST', 
+        body: JSON.stringify(allData)
+    })
+    .then(response => {
+        alert("Data berhasil dikirim ke Dinas!");
+        btnKirim.innerText = "✅ Terkirim";
+    })
+    .catch(error => {
+        console.error('Error!', error.message);
+        alert("Gagal mengirim data. Pastikan koneksi internet aktif.");
+        btnKirim.innerText = "Kirim Data ke Dinas";
+        btnKirim.disabled = false;
+    });
+}
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.SheetNames[0];
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], {header: 1});
+            jsonData.forEach((row) => {
+                const namaSekolah = row[0];
+                if (namaSekolah && namaSekolah.toString().toUpperCase() !== "NAMA SEKOLAH") {
+                    addRow(namaSekolah);
+                }
+            });
+            calculate();
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function addRow(name = "") {
+        const tbody = document.getElementById("tableBody");
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td><input type="text" value="${name}" placeholder="Nama sekolah..."></td>
+            <td>
+                <select class="sel-gel" onchange="calculate()">
+                    <option value="0">0 Gel(0 Hari)</option>
+                    <option value="1">1 Gel(2 Hari)</option>
+                    <option value="2">2 Gel(4 Hari)</option>
+                    <option value="3">3 Gel(6 Hari)</option>
+                    <option value="4">4 Gel(8 Hari)</option>
+                </select>
+            </td>
+            <td>
+                <select class="sel-sesi" onchange="calculate()">
+                    <option value="0">0 Sesi</option>
+                    <option value="1">1 Sesi</option>
+                    <option value="2">2 Sesi</option>
+                    <option value="3" selected>3 Sesi</option>
+                </select>
+            </td>
+            <td><input type="number" class="inp-ruang" value="1" min="1" oninput="calculate()"></td>
+            <td><span class="badge badge-slot out-slot">0</span></td>
+            <td><span class="badge badge-person out-orang">0</span></td>
+            <td><button onclick="deleteRow(this)" style="background:none; border:none; color:red; cursor:pointer;">❌</button></td>
+        `;
+        calculate();
+    }
+
+    function deleteRow(btn) {
+        btn.parentElement.parentElement.remove();
+        calculate();
+    }
+
+    function calculate() {
+        const rows = document.querySelectorAll("#tableBody tr");
+        let totalS = 0, totalO = 0;
+        rows.forEach(r => {
+            const g = parseInt(r.querySelector(".sel-gel").value);
+            const s = parseInt(r.querySelector(".sel-sesi").value);
+            const rng = parseInt(r.querySelector(".inp-ruang").value) || 0;
+            const slot = (g * 2) * s * rng;
+            const org = s * rng;
+            r.querySelector(".out-slot").innerText = slot;
+            r.querySelector(".out-orang").innerText = org;
+            totalS += slot; totalO += org;
+        });
+        document.getElementById("resSlot").innerText = totalS;
+        document.getElementById("resOrang").innerText = totalO;
+        document.getElementById("resSekolah").innerText = rows.length;
+    }
+
+    function clearTable() {
+        if(confirm("Hapus semua data?")) {
+            document.getElementById("tableBody").innerHTML = "";
+            calculate();
+        }
+    }
+
+    function downloadXLS() {
+        const rows = document.querySelectorAll("#tableBody tr");
+        if(rows.length === 0) return alert("Tabel masih kosong!");
+        const data = [["NAMA SEKOLAH", "GELOMBANG", "SESI", "RUANG", "TOTAL SLOT", "KEBUTUHAN PENGAWAS"]];
+        rows.forEach(r => {
+            data.push([
+                r.querySelector('input[type="text"]').value,
+                r.querySelector(".sel-gel").options[r.querySelector(".sel-gel").selectedIndex].text,
+                r.querySelector(".sel-sesi").value,
+                r.querySelector(".inp-ruang").value,
+                r.querySelector(".out-slot").innerText,
+                r.querySelector(".out-orang").innerText
+            ]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+        XLSX.writeFile(wb, "Rekap_Pengawas.xlsx");
+    }
+
+    // Bagian ini dihapus agar tidak muncul baris otomatis saat awal buka
+    // window.onload = () => addRow(); 
+</script>
+
+</body>
+</html>
