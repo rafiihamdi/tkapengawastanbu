@@ -139,7 +139,6 @@ function kirimKeDinas() {
     if(rows.length === 0) return alert("Belum ada data untuk dikirim!");
 
     const btnKirim = document.getElementById("btnKirimData");
-    const originalText = btnKirim.innerHTML;
     btnKirim.innerText = "Sedang Mengirim...";
     btnKirim.disabled = true;
 
@@ -154,6 +153,24 @@ function kirimKeDinas() {
             jmlPengawas: r.querySelector(".out-orang").innerText
         });
     });
+
+    // Menggunakan POST dengan mode 'no-cors' agar tidak terblokir browser
+    fetch(scriptURL, { 
+        method: 'POST', 
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(allData)
+    })
+    .then(() => {
+        alert("Data berhasil dikirim ke antrean Dinas! Silakan cek Google Sheets.");
+        btnKirim.innerText = "🚀 Kirim Data ke Dinas";
+        btnKirim.disabled = false;
+    })
+    .catch(error => {
+        alert("Terjadi kesalahan koneksi.");
+        btnKirim.disabled = false;
+    });
+}
 
     fetch(scriptURL, { 
         method: 'POST', 
@@ -280,4 +297,5 @@ function downloadXLS() {
 </script>
 </body>
 </html>
+
 
